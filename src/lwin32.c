@@ -4,7 +4,7 @@
 #include "Windows.h"
 #include "tlhelp32.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #define DLLEXPORT __declspec(dllexport)
 #elif
 #define DLLEXPORT
@@ -582,7 +582,6 @@ lfindwindow_w(lua_State *L)
             return luaL_error(L, "lpClassName must be string or nil");
     }
 
-
     HWND window = FindWindowW(lpClassName, lpWindowName);
     if (window == NULL)
     {
@@ -592,6 +591,32 @@ lfindwindow_w(lua_State *L)
     {
         lua_pushlightuserdata(L, window);
     }
+    return 1;
+}
+
+static int
+lisdebuggerpresent(lua_State* L)
+{
+    /* unix
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ptrace.h>
+#include <unistd.h>
+
+    int is_debugger_attached() {
+        // PTRACE_TRACEME: 允许调试器附加到当前进程
+        // 如果当前进程已经被调试器附加，ptrace会返回-1并设置errno
+        if (ptrace(PTRACE_TRACEME, 0, 1, 0) == -1) {
+            return 1; // 被调试器附加
+        }
+        return 0; // 没有被调试器附加
+    }
+    */
+    if(lua_gettop(L)!=0)
+    {
+        return luaL_error(L, "no args is needed");
+    }
+    lua_pushboolean(L, IsDebuggerPresent());
     return 1;
 }
 
@@ -611,6 +636,7 @@ static luaL_Reg lua_funcs[] = {
         {"get_module_handle_w", &lgetmodulehandlew},
         {"find_window", &lfindwindow},
         {"find_window_w", &lfindwindow_w},
+        {"is_debugger_present", &lisdebuggerpresent},
         {NULL, NULL}
 };
 
