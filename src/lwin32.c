@@ -10,7 +10,7 @@
 #define DLLEXPORT
 #endif /* _WIN32 */
 
-static int current_encoding  = CP_UTF8;
+static int current_encoding = CP_UTF8;
 
 static inline void
 set_encoding(int e)
@@ -25,19 +25,19 @@ get_encoding()
 }
 
 static int
-lset_encoding(lua_State* L)
+lset_encoding(lua_State *L)
 {
-    if(lua_gettop(L)!=1)
+    if (lua_gettop(L) != 1)
     {
         return luaL_error(L, "must have one arg as int");
     }
-    int e = (int)luaL_checkinteger(L,1);
+    int e = (int) luaL_checkinteger(L, 1);
     set_encoding(e);
     return 0;
 }
 
 static int
-lget_encoding(lua_State* L)
+lget_encoding(lua_State *L)
 {
     int e = get_encoding();
     lua_pushinteger(L, e);
@@ -58,8 +58,9 @@ static WCHAR *FormatError(DWORD code)
                        (LPWSTR) &lpMsgBuf,
                        0,
                        NULL);
-    if (n) {
-        while (iswspace(lpMsgBuf[n-1]))
+    if (n)
+    {
+        while (iswspace(lpMsgBuf[n - 1]))
             --n;
         lpMsgBuf[n] = L'\0'; /* rstrip() */
     }
@@ -72,23 +73,23 @@ static WCHAR *FormatError(DWORD code)
 static int
 lMultiByteToWideChar(lua_State *L, int index)
 {
-    if(lua_type(L, index)!=LUA_TSTRING)
+    if (lua_type(L, index) != LUA_TSTRING)
     {
         return -1;
     }
-    LPCCH s = (LPCCH)lua_tostring(L, index);
-    int size_needed = MultiByteToWideChar(current_encoding, MB_COMPOSITE, s, -1,NULL,  0);
-    size_needed+=10;
-    LPWSTR buf = (LPWSTR)lua_newuserdata(L, size_needed*sizeof(WCHAR));
-    int res = MultiByteToWideChar(current_encoding, MB_COMPOSITE, s, -1,buf,  size_needed);
-    if (res!=0)
+    LPCCH s = (LPCCH) lua_tostring(L, index);
+    int size_needed = MultiByteToWideChar(current_encoding, MB_COMPOSITE, s, -1, NULL, 0);
+    size_needed += 10;
+    LPWSTR buf = (LPWSTR) lua_newuserdata(L, size_needed * sizeof(WCHAR));
+    int res = MultiByteToWideChar(current_encoding, MB_COMPOSITE, s, -1, buf, size_needed);
+    if (res != 0)
     {
         lua_pushinteger(L, size_needed); /*ud, int*/
         return 0;
     }
     else
     {
-        lua_pop(L,1);
+        lua_pop(L, 1);
         return -1; // GetLastError
     }
 }
@@ -458,11 +459,11 @@ lgetmodulehandlew(lua_State *L)
         }
         case LUA_TSTRING:
         {
-            if(lMultiByteToWideChar(L, 1)!=0)
+            if (lMultiByteToWideChar(L, 1) != 0)
             {
                 return luaL_error(L, "failed to call MultiByteToWideChar: %s", FormatError(GetLastError()));
             }
-            param = (LPCWSTR)lua_touserdata(L, -2);
+            param = (LPCWSTR) lua_touserdata(L, -2);
             break;
         }
         default:
@@ -490,7 +491,7 @@ lfindwindow(lua_State *L)
         return luaL_error(L, "must have a lpClassName and lpWindowName, can be nil");
     }
     LPCSTR lpClassName = NULL;
-    switch(lua_type(L, 1))
+    switch (lua_type(L, 1))
     {
         case LUA_TNIL:
         {
@@ -498,14 +499,14 @@ lfindwindow(lua_State *L)
         }
         case LUA_TSTRING:
         {
-            lpClassName = (LPCSTR)lua_tostring(L, 1);
+            lpClassName = (LPCSTR) lua_tostring(L, 1);
             break;
         }
         default:
             return luaL_error(L, "lpClassName must be string or nil");
     }
     LPCSTR lpWindowName = NULL;
-    switch(lua_type(L, 2))
+    switch (lua_type(L, 2))
     {
         case LUA_TNIL:
         {
@@ -513,7 +514,7 @@ lfindwindow(lua_State *L)
         }
         case LUA_TSTRING:
         {
-            lpWindowName = (LPCSTR)lua_tostring(L, 2);
+            lpWindowName = (LPCSTR) lua_tostring(L, 2);
             break;
         }
         default:
@@ -533,7 +534,6 @@ lfindwindow(lua_State *L)
 }
 
 
-
 static int
 lfindwindow_w(lua_State *L)
 {
@@ -550,11 +550,11 @@ lfindwindow_w(lua_State *L)
         }
         case LUA_TSTRING:
         {
-            if(lMultiByteToWideChar(L, 1)!=0)
+            if (lMultiByteToWideChar(L, 1) != 0)
             {
                 return luaL_error(L, "failed to call MultiByteToWideChar: %s", FormatError(GetLastError()));
             }
-            lpClassName = (LPCWSTR)lua_touserdata(L, -2); /*str, str, wchar ud, int*/
+            lpClassName = (LPCWSTR) lua_touserdata(L, -2); /*str, str, wchar ud, int*/
             lua_pop(L, 1); /*str, str, wchar ud*/
             break;
         }
@@ -570,11 +570,11 @@ lfindwindow_w(lua_State *L)
         }
         case LUA_TSTRING:
         {
-            if(lMultiByteToWideChar(L, 2)!=0)
+            if (lMultiByteToWideChar(L, 2) != 0)
             {
                 return luaL_error(L, "failed to call MultiByteToWideChar: %s", FormatError(GetLastError()));
             }
-            lpWindowName = (LPCWSTR)lua_touserdata(L, -2); /*str, str, wchar ud, wchar ud, int*/
+            lpWindowName = (LPCWSTR) lua_touserdata(L, -2); /*str, str, wchar ud, wchar ud, int*/
             lua_pop(L, 1); /*str, str, wchar ud, wchar ud*/
             break;
         }
@@ -595,7 +595,7 @@ lfindwindow_w(lua_State *L)
 }
 
 static int
-lisdebuggerpresent(lua_State* L)
+lisdebuggerpresent(lua_State *L)
 {
     /* unix
 #include <stdio.h>
@@ -612,11 +612,39 @@ lisdebuggerpresent(lua_State* L)
         return 0; // 没有被调试器附加
     }
     */
-    if(lua_gettop(L)!=0)
+    if (lua_gettop(L) != 0)
     {
         return luaL_error(L, "no args is needed");
     }
     lua_pushboolean(L, IsDebuggerPresent());
+    return 1;
+}
+
+static int
+lread_clipboard(lua_State *L)
+{
+    if (!OpenClipboard(NULL))
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+    HANDLE hdata = GetClipboardData(CF_TEXT);
+    if (hdata == NULL)
+    {
+        CloseClipboard();
+        lua_pushnil(L);
+        return 1;
+    }
+    const char *text = (const char *) GlobalLock(hdata);
+    if (text == NULL)
+    {
+        CloseClipboard();
+        lua_pushnil(L);
+        return 1;
+    }
+    lua_pushstring(L, text);
+    GlobalUnlock(hdata);
+    CloseClipboard();
     return 1;
 }
 
@@ -637,6 +665,7 @@ static luaL_Reg lua_funcs[] = {
         {"find_window", &lfindwindow},
         {"find_window_w", &lfindwindow_w},
         {"is_debugger_present", &lisdebuggerpresent},
+        {"read_clipboard", &lread_clipboard},
         {NULL, NULL}
 };
 
