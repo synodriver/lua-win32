@@ -595,6 +595,127 @@ lfindwindow_w(lua_State *L)
 }
 
 static int
+lget_client_rect(lua_State* L)
+{
+    if (lua_type(L, 1) != LUA_TLIGHTUSERDATA)
+    {
+        return luaL_error(L, "arg1 must be HWND");
+    }
+    HWND window = (HWND)lua_touserdata(L, 1);
+    RECT rect;
+    GetClientRect(window, &rect);
+    lua_pushinteger(L, rect.left);
+    lua_pushinteger(L, rect.top);
+    lua_pushinteger(L, rect.right);
+    lua_pushinteger(L, rect.bottom);
+    return 4;
+}
+
+static int
+lget_dc(lua_State* L)
+{
+    if (lua_type(L, 1) != LUA_TLIGHTUSERDATA)
+    {
+        return luaL_error(L, "arg1 must be HWND");
+    }
+    HWND window = (HWND)lua_touserdata(L, 1);
+    HDC ret = GetDC(window);
+    lua_pushlightuserdata(L, ret);
+    return 1;
+}
+
+static int
+lcreate_compatible_dc(lua_State* L)
+{
+    if (lua_type(L, 1) != LUA_TLIGHTUSERDATA)
+    {
+        return luaL_error(L, "arg1 must be HDC");
+    }
+    HDC dc = (HDC)lua_touserdata(L, 1);
+    HDC cdc = CreateCompatibleDC(dc);
+    lua_pushlightuserdata(L, cdc);
+    return 1;
+}
+
+static int
+lcreate_compatible_bitmap(lua_State* L)
+{
+    if(lua_gettop(L)!=3)
+    {
+        return luaL_error(L, "must have 3 args, hdc, cx and cy");
+    }
+    HDC dc = (HDC)lua_touserdata(L, 1);
+    int cx = (int)luaL_checkinteger(L, 2);
+    int cy = (int)luaL_checkinteger(L, 3);
+    HBITMAP bitmap = CreateCompatibleBitmap(dc, cx, cy);
+    lua_pushlightuserdata(L, bitmap);
+    return 1;
+}
+
+static int
+lselect_object(lua_State* L)
+{
+    if(lua_gettop(L)!=2)
+    {
+        return luaL_error(L, "must have 2 args: hdc and HGDIOBJ");
+    }
+    HDC dc = (HDC)lua_touserdata(L, 1);
+    HGDIOBJ gdi = (HGDIOBJ)lua_touserdata(L, 2);
+    HGDIOBJ ret = SelectObject(dc, gdi);
+    lua_pushlightuserdata(L, ret);
+    return 1;
+}
+
+static int
+lbitblt(lua_State* L)
+{
+    if(lua_gettop(L)!=9)
+    {
+        return luaL_error(L, "must have 9 args: hdc, x, y, c, cy, hdcsrc, x1, y1 and rop");
+    }
+    HDC hdc = (HDC)lua_touserdata(L, 1);
+    int x = (int)luaL_checkinteger(L, 2);
+    int y = (int)luaL_checkinteger(L, 3);
+    int cx = (int)luaL_checkinteger(L, 4);
+    int cy = (int)luaL_checkinteger(L, 5);
+    HDC hdcsrc = (HDC)lua_touserdata(L, 6);
+    int x1 = (int)luaL_checkinteger(L, 7);
+    int y1 = (int)luaL_checkinteger(L, 8);
+    DWORD rop = (DWORD)luaL_checkinteger(L, 9);
+    BOOL ret = BitBlt(hdc, x, y, cx, cy, hdcsrc, x1, y1, rop);
+    lua_pushboolean(L, ret);
+    return 1;
+}
+
+static int
+lget_bitmap_bits(lua_State *L)
+{
+    if(lua_gettop(L)!=2)
+    {
+        return luaL_error(L, "must have 2 args: bitmap and total_bytes");
+    }
+    HBITMAP bitmap = (HBITMAP)lua_touserdata(L, 1);
+    int total_bytes = (int)luaL_checkinteger(L, 2);
+    void* bits = lua_newuserdata(L, total_bytes);
+    GetBitmapBits(bitmap, total_bytes, bits);
+    lua_pushlstring(L, (const char*)bits, total_bytes);
+    return 1;
+}
+
+static int
+ldelete_object(lua_State *L)
+{
+    if(lua_gettop(L)!=1)
+    {
+        return luaL_error(L, "must have 1 arg");
+    }
+    HGDIOBJ gdi = (HGDIOBJ)lua_touserdata(L, 1);
+    lua_pushboolean(L, DeleteObject(gdi));
+    return 1;
+}
+
+
+static int
 lisdebuggerpresent(lua_State *L)
 {
     /* unix
@@ -664,6 +785,14 @@ static luaL_Reg lua_funcs[] = {
         {"get_module_handle_w", &lgetmodulehandlew},
         {"find_window", &lfindwindow},
         {"find_window_w", &lfindwindow_w},
+        {"get_client_rect",&lget_client_rect},
+        {"get_dc", &lget_dc},
+        {"create_compatible_dc", &lcreate_compatible_dc},
+        {"create_compatible_bitmap", &lcreate_compatible_bitmap},
+        {"select_object", &lselect_object},
+        {"bitblt", &lbitblt},
+        {"get_bitmap_bits", &lget_bitmap_bits},
+        {"delete_object", &ldelete_object},
         {"is_debugger_present", &lisdebuggerpresent},
         {"read_clipboard", &lread_clipboard},
         {NULL, NULL}
